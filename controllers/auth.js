@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 
 const User = require("../models/User");
+const Login = require("../models/Login");
 const ErrorResponse = require("../utils/errorResponse"); // As we will handle errors using "next()"
 const sendEmail = require("../utils/sendEmail");
 
@@ -9,16 +10,16 @@ const sendEmail = require("../utils/sendEmail");
 // @access          Public
 const register = async (req, res, next) => {
   try {
-    const { name, email, password, profilePic } = req.body;
+    const { name, email, password, phone } = req.body;
     // Check if any of them is undefined
-    if (!name || !email || !password) {
+    if (!phone || !email || !name) {
       return next(
-        new ErrorResponse("Please provide name, email and password", 400)
+        new ErrorResponse("Please provide phone, email and name", 400)
       );
     }
 
     // Check if user already exists in our DB
-    const userExists = await User.findOne({ email }).exec();
+    const userExists = await User.findOne({ phone }).exec();
 
     if (userExists) {
       return next(new ErrorResponse("User already exists", 400));
@@ -27,17 +28,17 @@ const register = async (req, res, next) => {
     // Register and store the new user
     const user = await User.create(
       // If there is no picture present, remove 'profilePic'
-      profilePic === undefined || profilePic.length === 0
+      name === undefined || name.length === 0
         ? {
-            name,
             email,
+            phone,
             password,
           }
         : {
             name,
             email,
+            phone,
             password,
-            profilePic,
           }
     );
 
@@ -52,26 +53,104 @@ const register = async (req, res, next) => {
 // @access          Public
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, phone, otp } = req.body;
 
-    if (!email || !password) {
-      return next(new ErrorResponse("Please provide email and password", 400));
+    if (!phone || !otp) {
+      return next(new ErrorResponse("Please provide phone number and otp", 400));
     }
 
-    const user = await User.findOne({ email }).select("+password"); // Explicitly adding password
+    const userOtp = await Login.findOne({ phone }).select("+otp"); // Explicitly adding otp
 
-    if (!user) {
+    if (!userOtp) {
       return next(new ErrorResponse("Invalid credentials", 401));
     }
 
-    // Using our own custom method to compare passwords
-    const isMatched = await user.matchPasswords(password);
+    // Using our own custom method to compare otp
+    const isMatched = await userOtp.matchOtp(otp);
 
     if (!isMatched) {
       return next(new ErrorResponse("Invalid credentials", 401));
     }
 
+    //Check if Profile already exists; if not create the profile
+    var user = await User.findOne({ phone }).exec();
+
+    if(!user) {
+      // Register and store the new user
+       user = await User.create(
+        // If there is no picture present, remove 'profilePic'
+        email === undefined || email.length === 0
+          ? {
+              phone,
+            }
+          : {
+              email,
+              phone,
+            }
+      );
+      
+    }
+   
     return sendAuth(user, 200, res);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+// @description     OTP generation
+// @route           POST /api/auth/genOtp
+// @access          Public
+const genOtp = async (req, res, next) => {
+  try {
+    const { email, phone} = req.body;
+
+    if (!phone) {
+      return next(new ErrorResponse("Please provide phone number", 400));
+    }
+
+    const phoneCheck = await Login.findOne({ phone }); // Explicitly adding password
+
+    //Create OTP if phone number is new
+    if (!phoneCheck) {
+          // Register and store the new user
+        var returnOtp = await Login.create(
+          // If there is no picture present, remove 'profilePic'
+          email === undefined || email.length === 0
+            ? {
+                phone,
+              }
+            : {
+                email,
+                phone,
+              }
+        );
+    } else {
+      // Update the opt and send
+      const updateData = {
+        otp : Math.floor(Math.random() * 9000) + 1000
+      }
+      var returnOtp = await Login.findByIdAndUpdate(phoneCheck._id, updateData, { new: true });
+    }
+
+    // Send OTP on mail/phone 
+    const html = `
+      <h1>Your OTP for login is: ${returnOtp.otp}</h1>
+    `;
+
+    try {
+      await sendEmail({
+        to: returnOtp.email,
+        subject: "Login Otp",
+        text: "Your login otp.",
+        html,
+      });
+
+      return res
+        .status(200)
+        .json({ success: true, data: "OTP Sent Successfully" });
+      } catch (error) {
+        return next(new ErrorResponse("OTP could not be sent", 500));
+    }
   } catch (error) {
     return next(error);
   }
@@ -171,11 +250,11 @@ const sendAuth = (user, statusCode, res) => {
   return res.status(statusCode).json({
     success: true,
     name: user.name,
+    phone: user.phone,
     email: user.email,
-    profilePic: user.profilePic,
     token: user.getSignedToken(),
     expires_at: new Date(Date.now() + process.env.JWT_EXPIRE * 60 * 60 * 1000),
   });
 };
 
-module.exports = { register, login, forgotPassword, resetPassword };
+module.exports = { register, login, genOtp, forgotPassword, resetPassword };

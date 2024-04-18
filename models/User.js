@@ -5,28 +5,21 @@ const crypto = require("crypto");
 
 const UserSchema = new mongoose.Schema(
   {
-    name: { type: String, required: [true, "Please provide a name"] },
+    name: { type: String},
     email: {
       type: String,
-      unique: true,
-      required: [true, "Please provide an email"],
-      unique: true,
       match: [
         /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
         "Please provide a valid email",
       ], // Adding validation for email
     },
-    password: {
+    phone: {
       type: String,
-      required: [true, "Please add a password"],
-      minlength: 8,
-      select: false, // Whenever we query for a user, do we want to return password as well
+      unique: true,
+      required: [true, "Please provide an phone number"],
     },
-    profilePic: {
-      type: String,
-      default:
-        "https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg", // Default profile pic
-    },
+    device_token: String,
+
     resetPasswordToken: String, // String is shorthand for {type: String}
     resetPasswordExpire: Date,
   },
@@ -50,7 +43,7 @@ UserSchema.methods.matchPasswords = async function (password) {
 };
 
 UserSchema.methods.getSignedToken = function () {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
+  return jwt.sign({ phone: this.phone }, process.env.JWT_SECRET, {
     expiresIn: `${process.env.JWT_EXPIRE}h`, // In hours
   });
 };

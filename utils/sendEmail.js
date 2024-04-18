@@ -12,7 +12,7 @@ const sendEmail = async ({ to, subject, text, html }) => {
   });
 
   const emailOptions = {
-    from: `NodeAuth <${process.env.EMAIL_FROM}>`,
+    from: `DigiClinik <${process.env.EMAIL_FROM}>`,
     to,
     subject,
     text,
