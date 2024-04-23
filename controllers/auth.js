@@ -102,7 +102,7 @@ const login = async (req, res, next) => {
 // @access          Public
 const genOtp = async (req, res, next) => {
   try {
-    const { phone, email } = req.body;
+    const { email, phone} = req.body;
     console.log(phone,email);
     if (!phone) {
       return next(new ErrorResponse(`Please provide phone number!!${ phone }`, 400));
