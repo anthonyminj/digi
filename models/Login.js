@@ -5,7 +5,7 @@ const LoginSchema = new mongoose.Schema(
         phone: {
             type: String,
             unique: true,
-            required: [true, "Please provide an phone number"],
+            required: [true, "Please provide an phone numbers"],
             unique: true,
         },
         email: {
