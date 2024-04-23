@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.route("/register").post(register);
 router.route("/login").post(login);
-router.route("/genOtp").get(genOtp);
+router.route("/genOtp").post(genOtp);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword/:resetToken").put(resetPassword);
 
