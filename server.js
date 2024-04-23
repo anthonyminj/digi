@@ -10,9 +10,7 @@ const app = express();
 app.use(express.json());
 connectDB(); // Connect to databse
 
-// API Routes
-app.use("/api/auth", require("./routes/auth"));
-app.use("/api/private", require("./routes/private"));
+
 
 // --------------------------DEPLOYMENT------------------------------
 
@@ -26,9 +24,13 @@ if (process.env.NODE_ENV === "production") {
   });
 } else {
   app.get("/", (req, res) => {
-    res.send("API is running");
+    res.send("API is running in Dev ENV");
   });
 }
+
+// API Routes
+app.use("/api/auth", require("./routes/auth"));
+//app.use("/api/private", require("./routes/private"));
 
 // --------------------------DEPLOYMENT------------------------------
 
