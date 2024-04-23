@@ -103,9 +103,9 @@ const login = async (req, res, next) => {
 const genOtp = async (req, res, next) => {
   try {
     const { phone, email } = req.body;
-
+    console.log(phone,email);
     if (!phone) {
-      return next(new ErrorResponse("Please provide phone number!!${ phone }", 400));
+      return next(new ErrorResponse(`Please provide phone number!!${ phone }`, 400));
     }
 
     const phoneCheck = await Login.findOne({ phone }); // Explicitly adding password
