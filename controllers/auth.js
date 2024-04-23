@@ -105,7 +105,7 @@ const genOtp = async (req, res, next) => {
     const { phone, email } = req.body;
 
     if (!phone) {
-      return next(new ErrorResponse("Please provide phone number!!", 400));
+      return next(new ErrorResponse("Please provide phone number!!${ phone }", 400));
     }
 
     const phoneCheck = await Login.findOne({ phone }); // Explicitly adding password
